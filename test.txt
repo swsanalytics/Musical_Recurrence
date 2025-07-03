@@ -1,0 +1,27 @@
+{
+    "inputs": [
+        {
+            "name": "Output directory",
+            "type": "text",
+            "value": "."
+        },
+        {
+            "name": "Length",
+            "type": "scalar",
+            "values": 7,
+            "units": "mm"
+        },
+        {
+            "name": "Width",
+            "type": "scalar",
+            "values": 2,
+            "units": "mm"
+        },
+        {
+            "name": "Height",
+            "type": "scalar",
+            "values": 2,
+            "units": "mm"
+        }
+    ]
+}
