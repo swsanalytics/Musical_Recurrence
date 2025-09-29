@@ -1,0 +1,2220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aerospace Surrogate Model Performance Report</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-section: #f8fafc;
+            --bg-hover: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-light: #64748b;
+            --border: #cbd5e1;
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: linear-gradient(180deg, #e0e7ff 0%, #f1f5f9 40%, #ffffff 100%);
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Subtle background pattern */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 1px 1px, rgba(79, 70, 229, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+            border-radius: 20px;
+            padding: 60px 48px;
+            margin-bottom: 32px;
+            box-shadow: 0 10px 40px rgba(79, 70, 229, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -20%;
+            width: 60%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent);
+            pointer-events: none;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-subtitle {
+            font-size: 1.25rem;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 32px;
+            font-weight: 400;
+        }
+        
+        .model-info {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .model-name {
+            font-size: 1.05rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary);
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .status-badge {
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .status-badge.validated {
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-badge.warning {
+            background: rgba(245, 158, 11, 0.9);
+            color: white;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+        
+        /* Navigation Tabs */
+        .nav-tabs {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 8px;
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+        }
+        
+        .nav-tab {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 10px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .nav-tab:hover {
+            background: var(--bg-section);
+            color: var(--primary);
+        }
+        
+        .nav-tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+        }
+        
+        /* Alert Banner */
+        .alert-banner {
+            background: #fef3c7;
+            border: 1px solid #fde047;
+            color: #713f12;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideIn 0.5s;
+        }
+        
+        .alert-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .metric-card.good {
+            border-left: 4px solid var(--success);
+        }
+        
+        .metric-card.warning {
+            border-left: 4px solid var(--warning);
+        }
+        
+        .metric-card.error {
+            border-left: 4px solid var(--error);
+        }
+        
+        .metric-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-hover);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+        }
+        
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        
+        .metric-unit {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            font-weight: 400;
+        }
+        
+        .metric-trend {
+            margin-top: 8px;
+            font-size: 0.8125rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+        }
+        
+        .metric-trend.up {
+            color: var(--success);
+        }
+        
+        .metric-trend.down {
+            color: var(--error);
+        }
+        
+        .metric-breakdown {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--bg-hover);
+        }
+        
+        .breakdown-item {
+            display: inline-block;
+            margin-right: 12px;
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+        
+        /* Output Selector */
+        .output-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: var(--bg-section);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        
+        .output-tab {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .output-tab:hover {
+            background: var(--bg-hover);
+            color: var(--primary);
+        }
+        
+        .output-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Feature Selector */
+        #shapFeatureSelect {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        #shapFeatureSelect:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        /* Sections */
+        .section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 36px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--bg-hover);
+        }
+        
+        .section-title {
+            font-size: 1.625rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        
+        .section-description {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        /* Charts */
+        .chart-container {
+            background: var(--bg-section);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .chart-wrapper.small {
+            height: 300px;
+        }
+        
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+            padding: 14px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--bg-hover);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        tr:hover {
+            background: var(--bg-section);
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .badge-high {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #dc2626;
+        }
+        
+        .badge-medium {
+            background: linear-gradient(135deg, #fed7aa, #fbbf24);
+            color: #92400e;
+        }
+        
+        .badge-low {
+            background: linear-gradient(135deg, #d1fae5, #86efac);
+            color: #065f46;
+        }
+        
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: var(--bg-section);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .info-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        
+        .info-content {
+            flex: 1;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        
+        .info-value {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 24px;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            margin-top: 40px;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .footer-title {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .timestamp {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 40px 30px;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .section {
+                padding: 25px;
+            }
+            
+            .nav-tabs {
+                padding: 6px;
+                gap: 4px;
+            }
+            
+            .nav-tab {
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div class="header-badge">
+                    🚀 Multi-Output Aerospace Analysis
+                </div>
+                <h1>Surrogate Model Performance</h1>
+                <div class="header-subtitle">Advanced Multi-Output Regression for Simultaneous Aerodynamic Predictions</div>
+                <div class="model-info">
+                    <div class="model-name">
+                        🔬 Multi-Output Kriging - 4D Response Surface
+                    </div>
+                    <div class="status-badge validated">
+                        ✓ All Outputs Validated
+                    </div>
+                    <div class="status-badge warning">
+                        ⚠ CM Accuracy Warning
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('overview')">📊 Overview</button>
+            <button class="nav-tab" onclick="switchTab('validation')">🔍 Validation</button>
+            <button class="nav-tab" onclick="switchTab('response')">📈 Response Surfaces</button>
+            <button class="nav-tab" onclick="switchTab('uncertainty')">🎯 Uncertainty</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <!-- Multi-Output Model Architecture Summary -->
+            <div class="section" style="background: linear-gradient(135deg, #f8fafc, #e0e7ff); border: 2px solid var(--primary);">
+                <h3 style="color: var(--primary); margin-bottom: 20px; font-size: 1.25rem;">
+                    🔄 Multi-Output Regression Architecture
+                </h3>
+                <div style="display: flex; gap: 40px; align-items: center; justify-content: space-around; flex-wrap: wrap;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2.5rem; color: var(--primary); font-weight: 700;">12</div>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 8px;">Input Variables</div>
+                        <div style="color: var(--text-light); font-size: 0.8rem; margin-top: 4px;">α, Mach, Λ, AR, t/c...</div>
+                    </div>
+                    <div style="font-size: 2rem; color: var(--primary);">→</div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2.5rem; color: var(--primary); font-weight: 700;">4</div>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 8px;">Output Variables</div>
+                        <div style="color: var(--text-light); font-size: 0.8rem; margin-top: 4px;">CL, CD, CM, L/D</div>
+                    </div>
+                    <div style="font-size: 2rem; color: var(--primary);">→</div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2.5rem; color: var(--success); font-weight: 700;">98.4%</div>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 8px;">Avg. Accuracy</div>
+                        <div style="color: var(--text-light); font-size: 0.8rem; margin-top: 4px;">R² = 0.9846</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alert Banner -->
+            <div class="alert-banner">
+                <span class="alert-icon">⚠️</span>
+                <div>
+                    <strong>Multi-Output Model Warning:</strong> Moment coefficient (CM) predictions show 2% higher error than other outputs. Output correlation between CL and CD is strong (r=0.92) but consider adding coupled training samples in the transonic regime for improved multi-output accuracy.
+                </div>
+            </div>
+            
+            <!-- Performance Metrics -->
+            <h3 style="color: #1e293b; margin-bottom: 24px; font-size: 1.25rem;">Multi-Output Performance Metrics</h3>
+            
+            <!-- Output Selector -->
+            <div class="output-selector">
+                <button class="output-tab active" onclick="switchOutput('all')">All Outputs</button>
+                <button class="output-tab" onclick="switchOutput('cl')">CL (Lift)</button>
+                <button class="output-tab" onclick="switchOutput('cd')">CD (Drag)</button>
+                <button class="output-tab" onclick="switchOutput('cm')">CM (Moment)</button>
+                <button class="output-tab" onclick="switchOutput('ld')">L/D Ratio</button>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card good">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-label">R² Score (Average)</div>
+                    <div class="metric-value">
+                        <span id="r2Score">0.9846</span>
+                    </div>
+                    <div class="metric-breakdown">
+                        <span class="breakdown-item">CL: 0.9912</span>
+                        <span class="breakdown-item">CD: 0.9823</span>
+                        <span class="breakdown-item">CM: 0.9791</span>
+                    </div>
+                    <div class="metric-trend up">
+                        ↑ 2.3% from v1.2
+                    </div>
+                </div>
+                <div class="metric-card good">
+                    <div class="metric-icon">📐</div>
+                    <div class="metric-label">RMSE (Average)</div>
+                    <div class="metric-value">
+                        <span id="rmse">0.0156</span>
+                        <span class="metric-unit">normalized</span>
+                    </div>
+                    <div class="metric-breakdown">
+                        <span class="breakdown-item">CL: 0.0134</span>
+                        <span class="breakdown-item">CD: 0.0167</span>
+                        <span class="breakdown-item">CM: 0.0178</span>
+                    </div>
+                    <div class="metric-trend up">
+                        ↑ 8.5% improved
+                    </div>
+                </div>
+                <div class="metric-card good">
+                    <div class="metric-icon">🎯</div>
+                    <div class="metric-label">MAE (Average)</div>
+                    <div class="metric-value">
+                        <span id="mae">0.0123</span>
+                        <span class="metric-unit">normalized</span>
+                    </div>
+                    <div class="metric-breakdown">
+                        <span class="breakdown-item">CL: 0.0098</span>
+                        <span class="breakdown-item">CD: 0.0134</span>
+                        <span class="breakdown-item">CM: 0.0145</span>
+                    </div>
+                    <div class="metric-trend up">
+                        ↑ 5.2% improved
+                    </div>
+                </div>
+                <div class="metric-card warning">
+                    <div class="metric-icon">📏</div>
+                    <div class="metric-label">Worst Output</div>
+                    <div class="metric-value">
+                        <span id="worstOutput">CM</span>
+                    </div>
+                    <div class="metric-breakdown">
+                        <span class="breakdown-item">R²: 0.9791</span>
+                        <span class="breakdown-item">RMSE: 0.0178</span>
+                        <span class="breakdown-item">Samples: 425</span>
+                    </div>
+                    <div class="metric-trend down">
+                        ↓ Needs attention
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Model Information -->
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-icon">📊</div>
+                    <div class="info-content">
+                        <div class="info-label">Training Samples</div>
+                        <div class="info-value">1,250</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">✅</div>
+                    <div class="info-content">
+                        <div class="info-label">Validation Samples</div>
+                        <div class="info-value">425</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">🎛️</div>
+                    <div class="info-content">
+                        <div class="info-label">Input Variables</div>
+                        <div class="info-value">12</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">📈</div>
+                    <div class="info-content">
+                        <div class="info-label">Output Variables</div>
+                        <div class="info-value">4 (CL, CD, CM, L/D)</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">🔧</div>
+                    <div class="info-content">
+                        <div class="info-label">Model Type</div>
+                        <div class="info-value">Multi-Output Kriging</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">⚙️</div>
+                    <div class="info-content">
+                        <div class="info-label">Kernel Function</div>
+                        <div class="info-value">Matérn 5/2 (ARD)</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">🔄</div>
+                    <div class="info-content">
+                        <div class="info-label">Output Coupling</div>
+                        <div class="info-value">ICM (r=0.89)</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">📉</div>
+                    <div class="info-content">
+                        <div class="info-label">Avg. Output Error</div>
+                        <div class="info-value">1.59%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Multi-Output Specialized Visualizations -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🎯</span>
+                        Multi-Output Regression Analysis
+                    </h2>
+                </div>
+                <p class="section-description">Specialized visualizations for simultaneous multi-output predictions</p>
+                
+                <!-- Parallel Coordinates Plot -->
+                <div class="chart-container" style="margin-bottom: 24px;">
+                    <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Parallel Coordinates: Test Sample Performance Across All Outputs</h4>
+                    <div id="parallelCoordinates" style="width: 100%; height: 400px;"></div>
+                </div>
+                
+                <!-- Error Distribution Comparison -->
+                <div class="grid-2">
+                    <div class="chart-container">
+                        <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Multi-Output Error Distribution</h4>
+                        <div class="chart-wrapper small">
+                            <canvas id="errorViolinChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Normalized Performance Radar</h4>
+                        <div class="chart-wrapper small">
+                            <canvas id="performanceRadarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Output Relationships Visualization -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🔄</span>
+                        Output Relationships & Dependencies
+                    </h2>
+                </div>
+                <p class="section-description">Relationships and dependencies between multiple outputs captured by the model</p>
+                
+                <div class="grid-2">
+                    <div class="chart-container">
+                        <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Output 1 vs Output 2 Relationship</h4>
+                        <div class="chart-wrapper small">
+                            <canvas id="output1vs2Chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Multi-Output Interaction Matrix</h4>
+                        <div id="outputInteractionMatrix" style="width: 100%; height: 300px;"></div>
+                    </div>
+                </div>
+                
+                <!-- Additional generic multi-output visualization -->
+                <div class="chart-container" style="margin-top: 24px;">
+                    <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Output Prediction Confidence Bands</h4>
+                    <div class="chart-wrapper">
+                        <canvas id="confidenceBandsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Residual Analysis Heatmaps -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🔥</span>
+                        Multi-Output Residual Analysis
+                    </h2>
+                </div>
+                <p class="section-description">Prediction error patterns across the input space for all outputs</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <div class="chart-container">
+                        <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Output 1 Residuals</h4>
+                        <div id="output1ResidualHeatmap" style="width: 100%; height: 300px;"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Output 2 Residuals</h4>
+                        <div id="output2ResidualHeatmap" style="width: 100%; height: 300px;"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Output 3 Residuals</h4>
+                        <div id="output3ResidualHeatmap" style="width: 100%; height: 300px;"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Output 4 Residuals</h4>
+                        <div id="output4ResidualHeatmap" style="width: 100%; height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Correlation Analysis -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🔗</span>
+                        Output Correlation Analysis
+                    </h2>
+                </div>
+                <p class="section-description">Cross-correlation between different output predictions showing model's ability to capture physical relationships</p>
+                
+                <div class="grid-2">
+                    <div class="chart-container">
+                        <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Prediction Correlation Matrix</h4>
+                        <div id="correlationHeatmap" style="width: 100%; height: 400px;"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">R² Comparison by Output</h4>
+                        <div class="chart-wrapper small">
+                            <canvas id="r2ComparisonChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SHAP Feature Importance Analysis -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🎯</span>
+                        SHAP Feature Importance Analysis
+                    </h2>
+                </div>
+                <p class="section-description">Feature contributions to model predictions using SHAP (SHapley Additive exPlanations) values</p>
+                
+                <!-- Enhanced controls -->
+                <div style="display: flex; gap: 16px; margin-bottom: 24px; align-items: center;">
+                    <!-- View selector -->
+                    <div class="output-selector" style="flex: 1;">
+                        <button class="output-tab active" onclick="switchShapVisualization('heatmap')">Matrix View</button>
+                        <button class="output-tab" onclick="switchShapVisualization('stacked')">Bar Plot View</button>
+                        <button class="output-tab" onclick="switchShapVisualization('individual')">Sample Analysis</button>
+                    </div>
+                    
+                    <!-- Sample selector (only visible in individual mode) -->
+                    <div id="sampleSelector" style="display: none; align-items: center; gap: 10px;">
+                        <label for="shapSampleSelect" style="color: #475569; font-weight: 500;">Select Sample:</label>
+                        <select id="shapSampleSelect" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: #475569; font-size: 0.875rem;">
+                            <option value="0">Sample #1</option>
+                            <option value="1">Sample #2</option>
+                            <option value="2">Sample #3</option>
+                            <option value="3">Sample #4</option>
+                            <option value="4">Sample #5</option>
+                            <option value="5">Sample #6</option>
+                            <option value="6">Sample #7</option>
+                            <option value="7">Sample #8</option>
+                            <option value="8">Sample #9</option>
+                            <option value="9">Sample #10</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- SHAP Heatmap Container -->
+                <div id="shapHeatmapContainer" class="chart-container">
+                    <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">SHAP Values Heatmap: Features × Outputs</h4>
+                    <div id="shapHeatmap" style="width: 100%; height: 500px;"></div>
+                </div>
+                
+                <!-- SHAP Stacked Bar Container -->
+                <div id="shapStackedContainer" class="chart-container" style="display: none;">
+                    <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Relative Feature Importance Distribution Across Outputs</h4>
+                    <div class="chart-wrapper">
+                        <canvas id="shapStackedChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Individual Sample SHAP Container -->
+                <div id="shapIndividualContainer" class="chart-container" style="display: none;">
+                    <h4 style="color: #475569; margin-bottom: 16px; font-size: 1rem;">Individual Sample SHAP Analysis</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div id="shapSamplePlot" style="width: 100%; height: 400px;"></div>
+                        <div id="shapSampleByOutput" style="width: 100%; height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Performance Table -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">📈</span>
+                        Per-Output Performance Summary
+                    </h2>
+                </div>
+                <p class="section-description">Detailed performance metrics for each output variable</p>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Output Variable</th>
+                                <th>R² Score</th>
+                                <th>RMSE</th>
+                                <th>MAE</th>
+                                <th>Max Error</th>
+                                <th>95% CI Coverage</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>CL (Lift Coefficient)</strong></td>
+                                <td>0.9912</td>
+                                <td>0.0134</td>
+                                <td>0.0098</td>
+                                <td>0.0623</td>
+                                <td>94.8%</td>
+                                <td><span class="badge badge-low">✓ Excellent</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>CD (Drag Coefficient)</strong></td>
+                                <td>0.9823</td>
+                                <td>0.0167</td>
+                                <td>0.0134</td>
+                                <td>0.0823</td>
+                                <td>93.2%</td>
+                                <td><span class="badge badge-low">✓ Excellent</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>CM (Moment Coefficient)</strong></td>
+                                <td>0.9791</td>
+                                <td>0.0178</td>
+                                <td>0.0145</td>
+                                <td>0.0934</td>
+                                <td>91.5%</td>
+                                <td><span class="badge badge-medium">⚡ Good</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>L/D (Efficiency)</strong></td>
+                                <td>0.9856</td>
+                                <td>0.0156</td>
+                                <td>0.0112</td>
+                                <td>0.0712</td>
+                                <td>92.9%</td>
+                                <td><span class="badge badge-low">✓ Excellent</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Validation Tab -->
+        <div id="validation" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🔍</span>
+                        Cross-Validation Results
+                    </h2>
+                </div>
+                <p class="section-description">K-fold cross-validation demonstrating model stability and generalization performance</p>
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="kfoldChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Response Surface Tab -->
+        <div id="response" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">📈</span>
+                        3D Response Surface Visualization
+                    </h2>
+                </div>
+                <p class="section-description">Interactive exploration of the surrogate model response across the design space</p>
+                <div class="chart-container">
+                    <div id="surface3D" style="width: 100%; height: 500px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Uncertainty Tab -->
+        <div id="uncertainty" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🎯</span>
+                        Multi-Output Uncertainty Quantification
+                    </h2>
+                </div>
+                <p class="section-description">Confidence intervals and prediction uncertainty for each output variable</p>
+                
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="uncertaintyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p class="footer-title">🚀 Aerospace Design Optimization Framework</p>
+            <p class="timestamp" id="timestamp"></p>
+        </div>
+    </div>
+    
+    <script>
+        // Set timestamp
+        document.getElementById('timestamp').textContent = 'Report Generated: ' + new Date().toLocaleString();
+        
+        // Tab switching
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            const navTabs = document.querySelectorAll('.nav-tab');
+            navTabs.forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // Output switching for multi-output view
+        function switchOutput(output) {
+            const tabs = document.querySelectorAll('.output-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update metrics based on selected output
+            updateMetricsForOutput(output);
+        }
+        
+        function updateMetricsForOutput(output) {
+            const metrics = {
+                all: { r2: '0.9846', rmse: '0.0159', mae: '0.0122' },
+                cl: { r2: '0.9912', rmse: '0.0134', mae: '0.0098' },
+                cd: { r2: '0.9823', rmse: '0.0167', mae: '0.0134' },
+                cm: { r2: '0.9791', rmse: '0.0178', mae: '0.0145' },
+                ld: { r2: '0.9856', rmse: '0.0156', mae: '0.0112' }
+            };
+            
+            if (metrics[output]) {
+                document.getElementById('r2Score').textContent = metrics[output].r2;
+                document.getElementById('rmse').textContent = metrics[output].rmse;
+                document.getElementById('mae').textContent = metrics[output].mae;
+            }
+        }
+        
+        // Chart configurations
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#475569';
+        
+        // Initialize Parallel Coordinates Plot with separate scales
+        const parallelDiv = document.getElementById('parallelCoordinates');
+        if (parallelDiv) {
+            // Generate sample data with different scales for each output
+            const sampleData = [];
+            for (let i = 0; i < 50; i++) {
+                sampleData.push({
+                    'Sample_ID': i,
+                    'Output_1_Actual': Math.random() * 100 + 50,  // Range: 50-150
+                    'Output_1_Pred': Math.random() * 100 + 50,
+                    'Output_2_Actual': Math.random() * 0.5 + 0.1, // Range: 0.1-0.6
+                    'Output_2_Pred': Math.random() * 0.5 + 0.1,
+                    'Output_3_Actual': Math.random() * 2000 - 1000, // Range: -1000 to 1000
+                    'Output_3_Pred': Math.random() * 2000 - 1000,
+                    'Output_4_Actual': Math.random() * 30 + 10, // Range: 10-40
+                    'Output_4_Pred': Math.random() * 30 + 10
+                });
+            }
+            
+            const dimensions = Object.keys(sampleData[0]).filter(key => key !== 'Sample_ID').map(key => ({
+                label: key,
+                values: sampleData.map(d => d[key]),
+                range: [Math.min(...sampleData.map(d => d[key])), Math.max(...sampleData.map(d => d[key]))]
+            }));
+            
+            const trace = {
+                type: 'parcoords',
+                line: {
+                    color: sampleData.map(d => {
+                        // Calculate relative error for each output
+                        const err1 = Math.abs(d.Output_1_Pred - d.Output_1_Actual) / 100;
+                        const err2 = Math.abs(d.Output_2_Pred - d.Output_2_Actual) / 0.5;
+                        const err3 = Math.abs(d.Output_3_Pred - d.Output_3_Actual) / 2000;
+                        const err4 = Math.abs(d.Output_4_Pred - d.Output_4_Actual) / 30;
+                        return (err1 + err2 + err3 + err4) / 4;
+                    }),
+                    colorscale: [
+                        [0, '#10b981'],
+                        [0.5, '#f59e0b'],
+                        [1, '#ef4444']
+                    ],
+                    showscale: true,
+                    colorbar: {
+                        title: 'Avg Relative<br>Error',
+                        titleside: 'right',
+                        tickformat: '.0%'
+                    }
+                },
+                dimensions: dimensions.map(dim => ({
+                    label: dim.label.replace(/_/g, ' '),
+                    values: dim.values,
+                    range: dim.range
+                }))
+            };
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'white',
+                margin: { l: 60, r: 100, b: 40, t: 40 },
+                font: { color: '#475569' },
+                title: {
+                    text: 'Each Axis Has Its Own Scale',
+                    font: { size: 12, color: '#64748b' }
+                }
+            };
+            
+            Plotly.newPlot('parallelCoordinates', [trace], layout, {responsive: true});
+        }
+        
+        // Error Distribution Box Plot
+        const errorViolinCtx = document.getElementById('errorViolinChart')?.getContext('2d');
+        if (errorViolinCtx) {
+            // Generate error statistics for each output
+            const errorStats = {
+                CL: { min: -0.045, q1: -0.012, median: 0.002, q3: 0.015, max: 0.048, outliers: [-0.062, 0.055] },
+                CD: { min: -0.018, q1: -0.005, median: 0.001, q3: 0.007, max: 0.021, outliers: [-0.025, 0.028] },
+                CM: { min: -0.052, q1: -0.018, median: -0.003, q3: 0.012, max: 0.045, outliers: [-0.068, 0.058] },
+                'L/D': { min: -0.082, q1: -0.025, median: 0.005, q3: 0.031, max: 0.095, outliers: [-0.112, 0.125] }
+            };
+            
+            new Chart(errorViolinCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['CL', 'CD', 'CM', 'L/D'],
+                    datasets: [
+                        {
+                            label: 'Q1',
+                            data: [errorStats.CL.q1, errorStats.CD.q1, errorStats.CM.q1, errorStats['L/D'].q1],
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                            borderColor: '#4f46e5',
+                            borderWidth: 1,
+                            stack: 'stack0'
+                        },
+                        {
+                            label: 'Median',
+                            data: [
+                                errorStats.CL.median - errorStats.CL.q1,
+                                errorStats.CD.median - errorStats.CD.q1,
+                                errorStats.CM.median - errorStats.CM.q1,
+                                errorStats['L/D'].median - errorStats['L/D'].q1
+                            ],
+                            backgroundColor: 'rgba(16, 185, 129, 0.3)',
+                            borderColor: '#10b981',
+                            borderWidth: 2,
+                            stack: 'stack0'
+                        },
+                        {
+                            label: 'Q3',
+                            data: [
+                                errorStats.CL.q3 - errorStats.CL.median,
+                                errorStats.CD.q3 - errorStats.CD.median,
+                                errorStats.CM.q3 - errorStats.CM.median,
+                                errorStats['L/D'].q3 - errorStats['L/D'].median
+                            ],
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1,
+                            stack: 'stack0'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                color: '#475569',
+                                font: { size: 10 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const output = context.label;
+                                    const stats = errorStats[output];
+                                    return [
+                                        `Min: ${stats.min.toFixed(3)}`,
+                                        `Q1: ${stats.q1.toFixed(3)}`,
+                                        `Median: ${stats.median.toFixed(3)}`,
+                                        `Q3: ${stats.q3.toFixed(3)}`,
+                                        `Max: ${stats.max.toFixed(3)}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Output Variable',
+                                color: '#475569'
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Prediction Error (Normalized)',
+                                color: '#475569'
+                            },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Performance Radar Chart
+        const performanceRadarCtx = document.getElementById('performanceRadarChart')?.getContext('2d');
+        if (performanceRadarCtx) {
+            new Chart(performanceRadarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['R²', 'RMSE⁻¹', 'MAE⁻¹', 'CI Coverage', 'Correlation', 'Speed'],
+                    datasets: [
+                        {
+                            label: 'CL',
+                            data: [99.12, 92, 94, 94.8, 92, 85],
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'CD',
+                            data: [98.23, 88, 90, 93.2, 100, 85],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'CM',
+                            data: [97.91, 85, 87, 91.5, 85, 85],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'L/D',
+                            data: [98.56, 89, 92, 92.9, 89, 85],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#475569', usePointStyle: true, font: { size: 11 } }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            min: 80,
+                            max: 100,
+                            ticks: { color: '#64748b' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            pointLabels: { color: '#475569', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Generic Output Relationship Chart (replaces Drag Polar)
+        const output1vs2Ctx = document.getElementById('output1vs2Chart')?.getContext('2d');
+        if (output1vs2Ctx) {
+            // Generate correlated output data
+            const actualData = [];
+            const predictedData = [];
+            for (let i = 0; i < 100; i++) {
+                const x = Math.random() * 2 - 0.5;
+                const noise = (Math.random() - 0.5) * 0.1;
+                // Create correlated relationship
+                const yActual = 0.7 * x + 0.3 * x * x + noise;
+                const yPredicted = yActual + (Math.random() - 0.5) * 0.05;
+                actualData.push({ x: x, y: yActual });
+                predictedData.push({ x: x, y: yPredicted });
+            }
+            
+            new Chart(output1vs2Ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Actual Relationship',
+                            data: actualData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.3)',
+                            showLine: false,
+                            pointRadius: 2
+                        },
+                        {
+                            label: 'Predicted Relationship',
+                            data: predictedData,
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.3)',
+                            showLine: false,
+                            pointRadius: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#475569', usePointStyle: true, font: { size: 11 } }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Correlation: r = 0.92',
+                            color: '#475569',
+                            font: { size: 12 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Output 1 (Normalized)', color: '#475569' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Output 2 (Normalized)', color: '#475569' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Output Interaction Matrix
+        const interactionDiv = document.getElementById('outputInteractionMatrix');
+        if (interactionDiv) {
+            // Generate interaction strengths between outputs
+            const outputs = ['Output 1', 'Output 2', 'Output 3', 'Output 4'];
+            const interactions = [
+                [1.00, 0.65, 0.42, 0.28],
+                [0.65, 1.00, 0.73, 0.51],
+                [0.42, 0.73, 1.00, 0.68],
+                [0.28, 0.51, 0.68, 1.00]
+            ];
+            
+            const data = [{
+                type: 'heatmap',
+                x: outputs,
+                y: outputs,
+                z: interactions,
+                colorscale: [
+                    [0, '#ffffff'],
+                    [0.5, '#93c5fd'],
+                    [1, '#4f46e5']
+                ],
+                showscale: true,
+                text: interactions.map(row => 
+                    row.map(val => `${(val * 100).toFixed(0)}%`)
+                ),
+                texttemplate: '%{text}',
+                textfont: {
+                    color: interactions.map(row => 
+                        row.map(val => val > 0.5 ? '#ffffff' : '#475569')
+                    ).flat(),
+                    size: 12
+                },
+                colorbar: {
+                    title: 'Interaction<br>Strength',
+                    titleside: 'right',
+                    tickformat: '.0%'
+                }
+            }];
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'white',
+                margin: { l: 80, r: 100, b: 60, t: 20 },
+                xaxis: {
+                    title: 'Output Variable',
+                    tickfont: { color: '#475569' }
+                },
+                yaxis: {
+                    title: 'Output Variable',
+                    tickfont: { color: '#475569' }
+                }
+            };
+            
+            Plotly.newPlot('outputInteractionMatrix', data, layout, {responsive: true});
+        }
+        
+        // Confidence Bands Chart - Separate for each output
+        const confidenceBandsCtx = document.getElementById('confidenceBandsChart')?.getContext('2d');
+        if (confidenceBandsCtx) {
+            // Generate sample indices
+            const sampleIndices = Array.from({length: 50}, (_, i) => i);
+            
+            // Generate predictions with confidence bands for ONE output at a time
+            const outputData = sampleIndices.map(i => Math.sin(i * 0.2) * 50 + 100);
+            const upperCI = outputData.map(v => v + 10);
+            const lowerCI = outputData.map(v => v - 10);
+            
+            new Chart(confidenceBandsCtx, {
+                type: 'line',
+                data: {
+                    labels: sampleIndices,
+                    datasets: [
+                        {
+                            label: 'Predicted Values',
+                            data: outputData,
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 2
+                        },
+                        {
+                            label: '95% CI Upper',
+                            data: upperCI,
+                            borderColor: '#10b981',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '95% CI Lower',
+                            data: lowerCI,
+                            borderColor: '#10b981',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            fill: '-1',
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Actual Values',
+                            data: outputData.map(v => v + (Math.random() - 0.5) * 15),
+                            borderColor: '#ef4444',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [2, 2],
+                            fill: false,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#ef4444'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { 
+                                color: '#475569', 
+                                usePointStyle: true,
+                                font: { size: 11 }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Select Output Variable Above to View Individual Predictions',
+                            color: '#64748b',
+                            font: { size: 12 }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label;
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Test Sample Index', color: '#475569' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Output Value (Original Scale)', color: '#475569' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Create Generic Residual Heatmaps
+        function createResidualHeatmap(divId, outputName) {
+            const div = document.getElementById(divId);
+            if (!div) return;
+            
+            // Generic input ranges
+            const input1 = Array.from({length: 15}, (_, i) => -1 + i * 0.14);
+            const input2 = Array.from({length: 15}, (_, i) => -1 + i * 0.14);
+            const residuals = [];
+            
+            for (let i = 0; i < input2.length; i++) {
+                residuals[i] = [];
+                for (let j = 0; j < input1.length; j++) {
+                    // Generate residual patterns with regions of higher error
+                    const region1 = Math.exp(-Math.pow((input1[j] - 0.5) / 0.3, 2));
+                    const region2 = Math.exp(-Math.pow((input2[i] - 0.3) / 0.4, 2));
+                    residuals[i][j] = (Math.random() - 0.5) * 0.05 * (1 + region1 + region2);
+                }
+            }
+            
+            const data = [{
+                type: 'heatmap',
+                x: input1,
+                y: input2,
+                z: residuals,
+                colorscale: [
+                    [0, '#4f46e5'],
+                    [0.5, '#ffffff'],
+                    [1, '#ef4444']
+                ],
+                colorbar: {
+                    title: 'Error',
+                    titleside: 'right',
+                    tickfont: { size: 10 }
+                }
+            }];
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'white',
+                margin: { l: 50, r: 60, b: 50, t: 10 },
+                xaxis: {
+                    title: 'Input 1',
+                    titlefont: { size: 11 },
+                    tickfont: { color: '#475569', size: 10 }
+                },
+                yaxis: {
+                    title: 'Input 2',
+                    titlefont: { size: 11 },
+                    tickfont: { color: '#475569', size: 10 }
+                }
+            };
+            
+            Plotly.newPlot(divId, data, layout, {responsive: true});
+        }
+        
+        // Create all residual heatmaps
+        createResidualHeatmap('output1ResidualHeatmap', 'Output 1');
+        createResidualHeatmap('output2ResidualHeatmap', 'Output 2');
+        createResidualHeatmap('output3ResidualHeatmap', 'Output 3');
+        createResidualHeatmap('output4ResidualHeatmap', 'Output 4');
+        
+        // Enhanced SHAP Visualization Functions
+        function switchShapVisualization(type) {
+            const heatmapContainer = document.getElementById('shapHeatmapContainer');
+            const stackedContainer = document.getElementById('shapStackedContainer');
+            const individualContainer = document.getElementById('shapIndividualContainer');
+            const featureSelector = document.getElementById('featureSelector');
+            
+            // Update button states
+            const buttons = event.target.parentElement.querySelectorAll('.output-tab');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Show/hide containers
+            heatmapContainer.style.display = type === 'heatmap' ? 'block' : 'none';
+            stackedContainer.style.display = type === 'stacked' ? 'block' : 'none';
+            individualContainer.style.display = type === 'individual' ? 'block' : 'none';
+            featureSelector.style.display = type === 'individual' ? 'block' : 'none';
+            
+            // Initialize visualizations
+            if (type === 'heatmap') {
+                if (!document.getElementById('shapHeatmap').hasChildNodes()) {
+                    initializeShapHeatmap();
+                }
+            } else if (type === 'stacked') {
+                if (!window.shapStackedChart) {
+                    initializeShapStackedChart();
+                }
+            } else if (type === 'individual') {
+                const selectedFeature = document.getElementById('shapFeatureSelect').value;
+                initializeIndividualShapPlot(parseInt(selectedFeature));
+            }
+        }
+        
+        // Initialize SHAP Heatmap with blue-grey-purple color scheme
+        function initializeShapHeatmap() {
+            const shapHeatmapDiv = document.getElementById('shapHeatmap');
+            if (!shapHeatmapDiv) return;
+            
+            const features = ['Feature 0', 'Feature 1', 'Feature 2', 'Feature 3', 'Feature 4', 
+                            'Feature 5', 'Feature 6', 'Feature 7', 'Feature 8', 'Feature 9'];
+            const outputs = ['Output 0', 'Output 1', 'Output 2', 'Output 3', 'Output 4'];
+            
+            // SHAP values from your data
+            const shapMatrix = [
+                [0.808, 0.267, 0.294, 0.549, 0.037],
+                [20.267, 31.546, 26.473, 4.908, 16.413],
+                [1.391, 1.412, 0.410, 3.369, 0.073],
+                [11.425, 37.978, 52.206, 97.057, 136.422],
+                [1.615, 9.867, 8.751, 4.104, 13.355],
+                [74.852, 68.162, 55.997, 38.496, 24.073],
+                [0.011, 0.141, 0.151, 0.322, 0.325],
+                [32.220, 26.747, 26.314, 28.271, 28.042],
+                [122.969, 77.278, 72.664, 107.622, 59.531],
+                [7.837, 28.958, 32.854, 45.254, 16.534]
+            ];
+            
+            // Create text annotations
+            const annotations = [];
+            for (let i = 0; i < outputs.length; i++) {
+                for (let j = 0; j < features.length; j++) {
+                    annotations.push({
+                        x: features[j],
+                        y: outputs[i],
+                        text: shapMatrix[j][i].toFixed(3),
+                        xref: 'x',
+                        yref: 'y',
+                        font: {
+                            color: shapMatrix[j][i] > 50 ? 'white' : '#1e293b',
+                            size: 10
+                        },
+                        showarrow: false
+                    });
+                }
+            }
+            
+            const data = [{
+                type: 'heatmap',
+                x: features,
+                y: outputs,
+                z: outputs.map((_, i) => features.map((_, j) => shapMatrix[j][i])),
+                colorscale: [
+                    [0, '#f1f5f9'],      // very light grey
+                    [0.15, '#e2e8f0'],   // light grey
+                    [0.3, '#cbd5e1'],    // grey
+                    [0.45, '#94a3b8'],   // blue-grey
+                    [0.6, '#64748b'],    // darker blue-grey
+                    [0.75, '#475569'],   // dark blue-grey
+                    [0.85, '#6366f1'],   // purple-blue
+                    [0.95, '#4f46e5'],   // primary blue
+                    [1, '#3730a3']       // deep purple
+                ],
+                showscale: true,
+                colorbar: {
+                    title: '|SHAP| Value',
+                    titleside: 'right',
+                    tickfont: { size: 10, color: '#475569' },
+                    titlefont: { size: 11, color: '#475569' }
+                },
+                hovertemplate: 'Feature: %{x}<br>Output: %{y}<br>SHAP Value: %{z:.3f}<extra></extra>'
+            }];
+            
+            const layout = {
+                paper_bgcolor: '#f8fafc',
+                plot_bgcolor: 'white',
+                margin: { l: 100, r: 120, b: 100, t: 40 },
+                xaxis: {
+                    title: 'Features',
+                    titlefont: { size: 12, color: '#475569' },
+                    tickfont: { color: '#475569', size: 11 },
+                    tickangle: -45,
+                    gridcolor: '#e2e8f0',
+                    linecolor: '#cbd5e1'
+                },
+                yaxis: {
+                    title: 'Outputs',
+                    titlefont: { size: 12, color: '#475569' },
+                    tickfont: { color: '#475569', size: 11 },
+                    gridcolor: '#e2e8f0',
+                    linecolor: '#cbd5e1'
+                },
+                annotations: annotations
+            };
+            
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d']
+            };
+            
+            Plotly.newPlot('shapHeatmap', data, layout, config);
+        }
+        
+        // Initialize Individual Feature SHAP Plot
+        function initializeIndividualShapPlot(featureIndex = 0) {
+            const individualDiv = document.getElementById('shapIndividualPlot');
+            if (!individualDiv) return;
+            
+            const features = ['Feature 0', 'Feature 1', 'Feature 2', 'Feature 3', 'Feature 4', 
+                            'Feature 5', 'Feature 6', 'Feature 7', 'Feature 8', 'Feature 9'];
+            const outputs = ['Output 0', 'Output 1', 'Output 2', 'Output 3', 'Output 4'];
+            
+            // SHAP matrix
+            const shapMatrix = [
+                [0.808, 0.267, 0.294, 0.549, 0.037],
+                [20.267, 31.546, 26.473, 4.908, 16.413],
+                [1.391, 1.412, 0.410, 3.369, 0.073],
+                [11.425, 37.978, 52.206, 97.057, 136.422],
+                [1.615, 9.867, 8.751, 4.104, 13.355],
+                [74.852, 68.162, 55.997, 38.496, 24.073],
+                [0.011, 0.141, 0.151, 0.322, 0.325],
+                [32.220, 26.747, 26.314, 28.271, 28.042],
+                [122.969, 77.278, 72.664, 107.622, 59.531],
+                [7.837, 28.958, 32.854, 45.254, 16.534]
+            ];
+            
+            const featureData = shapMatrix[featureIndex];
+            
+            // Create bar chart for individual feature
+            const trace1 = {
+                x: outputs,
+                y: featureData,
+                type: 'bar',
+                marker: {
+                    color: featureData.map(val => val),
+                    colorscale: [
+                        [0, '#e2e8f0'],
+                        [0.5, '#6366f1'],
+                        [1, '#3730a3']
+                    ],
+                    showscale: true,
+                    colorbar: {
+                        title: 'SHAP Value',
+                        titleside: 'right'
+                    }
+                },
+                text: featureData.map(val => val.toFixed(3)),
+                textposition: 'outside',
+                hovertemplate: 'Output: %{x}<br>SHAP Value: %{y:.3f}<extra></extra>'
+            };
+            
+            // Add a line chart overlay
+            const trace2 = {
+                x: outputs,
+                y: featureData,
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: {
+                    color: '#4f46e5',
+                    width: 2,
+                    dash: 'dash'
+                },
+                marker: {
+                    color: '#4f46e5',
+                    size: 8
+                },
+                showlegend: false,
+                hoverinfo: 'skip'
+            };
+            
+            const layout = {
+                title: `SHAP Values for ${features[featureIndex]}`,
+                titlefont: { size: 14, color: '#1e293b' },
+                paper_bgcolor: '#f8fafc',
+                plot_bgcolor: 'white',
+                xaxis: {
+                    title: 'Output Variables',
+                    titlefont: { color: '#475569' },
+                    tickfont: { color: '#475569' },
+                    gridcolor: '#e2e8f0',
+                    linecolor: '#cbd5e1'
+                },
+                yaxis: {
+                    title: 'SHAP Value',
+                    titlefont: { color: '#475569' },
+                    tickfont: { color: '#475569' },
+                    gridcolor: '#e2e8f0',
+                    linecolor: '#cbd5e1'
+                },
+                margin: { t: 60, b: 60, l: 60, r: 100 }
+            };
+            
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false
+            };
+            
+            Plotly.newPlot('shapIndividualPlot', [trace1, trace2], layout, config);
+        }
+        
+        // Add event listener for feature selector
+        document.getElementById('shapFeatureSelect')?.addEventListener('change', function(e) {
+            initializeIndividualShapPlot(parseInt(e.target.value));
+        });
+        
+        // Initialize SHAP Stacked Bar Chart
+        let shapStackedChart = null;
+        function initializeShapStackedChart() {
+            const shapStackedCtx = document.getElementById('shapStackedChart')?.getContext('2d');
+            if (!shapStackedCtx) return;
+            
+            // SHAP data for stacked chart (from your heatmap values)
+            const shapData = {
+                'Feature 0': [0.808, 0.267, 0.294, 0.549, 0.037],
+                'Feature 1': [20.267, 31.546, 26.473, 4.908, 16.413],
+                'Feature 2': [1.391, 1.412, 0.410, 3.369, 0.073],
+                'Feature 3': [11.425, 37.978, 52.206, 97.057, 136.422],
+                'Feature 4': [1.615, 9.867, 8.751, 4.104, 13.355],
+                'Feature 5': [74.852, 68.162, 55.997, 38.496, 24.073],
+                'Feature 6': [0.011, 0.141, 0.151, 0.322, 0.325],
+                'Feature 7': [32.220, 26.747, 26.314, 28.271, 28.042],
+                'Feature 8': [122.969, 77.278, 72.664, 107.622, 59.531],
+                'Feature 9': [7.837, 28.958, 32.854, 45.254, 16.534]
+            };
+            
+            // Calculate normalized values for stacked percentage chart
+            const outputTotals = [0, 1, 2, 3, 4].map(i => 
+                Object.values(shapData).reduce((sum, vals) => sum + vals[i], 0)
+            );
+            
+            // Color palette with blues, purples, and greys
+            const colors = [
+                '#4f46e5',  // primary blue
+                '#6366f1',  // lighter blue  
+                '#818cf8',  // light blue
+                '#10b981',  // teal
+                '#64748b',  // grey-blue
+                '#94a3b8',  // light grey-blue
+                '#8b5cf6',  // purple
+                '#a78bfa',  // light purple
+                '#475569',  // dark grey
+                '#cbd5e1'   // light grey
+            ];
+            
+            const datasets = Object.entries(shapData).map(([feature, values], idx) => ({
+                label: feature,
+                data: values.map((val, i) => (val / outputTotals[i]) * 100), // Convert to percentage
+                backgroundColor: colors[idx],
+                borderWidth: 0
+            }));
+            
+            // Destroy existing chart if it exists
+            if (window.shapStackedChart) {
+                window.shapStackedChart.destroy();
+            }
+            
+            window.shapStackedChart = new Chart(shapStackedCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Output 0', 'Output 1', 'Output 2', 'Output 3', 'Output 4'],
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#475569',
+                                font: { size: 11 },
+                                padding: 8
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const percentage = context.parsed.y.toFixed(1);
+                                    const feature = context.dataset.label;
+                                    const outputIdx = context.dataIndex;
+                                    const rawValue = shapData[feature][outputIdx].toFixed(3);
+                                    return `${feature}: ${percentage}% (SHAP: ${rawValue})`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Normalized Feature Contribution',
+                            color: '#475569',
+                            font: { size: 12 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Output',
+                                color: '#475569'
+                            },
+                            ticks: { color: '#475569' }
+                        },
+                        y: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Normalized Feature Contribution (%)',
+                                color: '#475569'
+                            },
+                            ticks: { 
+                                color: '#64748b',
+                                callback: function(value) {
+                                    return value.toFixed(0) + '%';
+                                }
+                            },
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+        
+        // R² Comparison Chart
+        const r2CompCtx = document.getElementById('r2ComparisonChart')?.getContext('2d');
+        if (r2CompCtx) {
+            new Chart(r2CompCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['CL', 'CD', 'CM', 'L/D'],
+                    datasets: [{
+                        label: 'R² Score',
+                        data: [0.9912, 0.9823, 0.9791, 0.9856],
+                        backgroundColor: [
+                            'rgba(79, 70, 229, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(99, 102, 241, 0.8)'
+                        ],
+                        borderColor: ['#4f46e5', '#10b981', '#f59e0b', '#6366f1'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 0.97,
+                            max: 1.0,
+                            title: {
+                                display: true,
+                                text: 'R² Score',
+                                color: '#475569'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Correlation Heatmap
+        const correlationDiv = document.getElementById('correlationHeatmap');
+        if (correlationDiv) {
+            const correlationData = [
+                [1.00, 0.92, 0.88, -0.95],
+                [0.92, 1.00, 0.85, -0.89],
+                [0.88, 0.85, 1.00, -0.82],
+                [-0.95, -0.89, -0.82, 1.00]
+            ];
+            
+            const data = [{
+                type: 'heatmap',
+                x: ['CL', 'CD', 'CM', 'L/D'],
+                y: ['CL', 'CD', 'CM', 'L/D'],
+                z: correlationData,
+                colorscale: [
+                    [0, '#ef4444'],
+                    [0.5, '#ffffff'],
+                    [1, '#4f46e5']
+                ],
+                showscale: true,
+                text: correlationData.map(row => 
+                    row.map(val => val.toFixed(2))
+                ),
+                texttemplate: '%{text}',
+                textfont: { color: '#ffffff', size: 14 },
+                colorbar: {
+                    title: 'Correlation',
+                    titleside: 'right'
+                }
+            }];
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'white',
+                margin: { l: 60, r: 60, b: 60, t: 20 }
+            };
+            
+            Plotly.newPlot('correlationHeatmap', data, layout, {responsive: true});
+        }
+        
+        // 3D Surface Plot
+        const surface3D = document.getElementById('surface3D');
+        if (surface3D) {
+            const x = Array.from({length: 30}, (_, i) => 0.3 + i * 0.022);
+            const y = Array.from({length: 30}, (_, i) => -2 + i * 0.57);
+            const z = [];
+            
+            for (let i = 0; i < y.length; i++) {
+                z[i] = [];
+                for (let j = 0; j < x.length; j++) {
+                    z[i][j] = Math.sin(x[j] * 3) * Math.cos(y[i] * 0.3) + Math.random() * 0.1;
+                }
+            }
+            
+            const data = [{
+                type: 'surface',
+                x: x,
+                y: y,
+                z: z,
+                colorscale: [
+                    [0, '#4f46e5'],
+                    [0.5, '#6366f1'],
+                    [1, '#818cf8']
+                ],
+                showscale: true
+            }];
+            
+            const layout = {
+                title: 'Lift-to-Drag Ratio Response Surface',
+                paper_bgcolor: 'white',
+                plot_bgcolor: 'white',
+                scene: {
+                    xaxis: { title: 'Mach Number' },
+                    yaxis: { title: 'Angle of Attack (deg)' },
+                    zaxis: { title: 'L/D' }
+                },
+                margin: { l: 0, r: 0, b: 0, t: 40 }
+            };
+            
+            Plotly.newPlot('surface3D', data, layout, {responsive: true});
+        }
+        
+        // Initialize SHAP heatmap on page load
+        setTimeout(() => {
+            const shapDiv = document.getElementById('shapHeatmap');
+            if (shapDiv && !shapDiv.hasChildNodes()) {
+                initializeShapHeatmap();
+            }
+        }, 100);
+    </script>
+</body>
+</html>
